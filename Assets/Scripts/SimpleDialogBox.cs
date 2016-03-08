@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class SimpleDialogBox : DialogBox
 {
@@ -10,6 +12,9 @@ public class SimpleDialogBox : DialogBox
     DialogItem m_currentDialog = null;
     bool m_isVisible = false;
 
+	public int textColumns;
+	public int textRows;
+
     void Awake()
     {
         m_myPanel = GetComponent<Image>();
@@ -18,25 +23,36 @@ public class SimpleDialogBox : DialogBox
     void Start()
     {
         m_dialogLabel = GetComponentInChildren<Text>();
-        m_nextDialogImage = GetComponentInChildren<Image>();
+		Image[] images = GetComponentsInChildren<Image>();
+		for (int i = 0; i < images.Length; ++i) {
+			if (images[i].gameObject != gameObject) {
+				m_nextDialogImage = images[i];
+			}
+		}
+
+		Debug.Log(m_nextDialogImage.name);
     }
 
     public override void ShowDialog(DialogItem dialog)
     {
-        if (dialog != null)
-        {
-            OpenWindow();
+		UnityEngine.Assertions.Assert.IsNotNull(dialog, "SimpleDialogBox: ShowDialog parameter 'dialog' is null");
 
-            m_currentDialog = dialog;
-            m_dialogLabel.text = dialog.message;
-        }
+		OpenWindow();
+
+		m_currentDialog = SplitDialogItem(dialog);
+		RefreshDialog();
+		GameManager.Instance.Messenger.SendMessage(this, "DialogBoxOpened");
     }
 
     public override void Next()
     {
-        if (null != m_currentDialog.nextDialog)
+		if (null == m_currentDialog) {
+			return;
+		}
+        else if (null != m_currentDialog.nextDialog)
         {
-            ShowDialog(m_currentDialog.nextDialog);
+			m_currentDialog = m_currentDialog.nextDialog;
+            RefreshDialog();
         }
         else
         {
@@ -48,7 +64,12 @@ public class SimpleDialogBox : DialogBox
     {
         CloseWindow();
         m_currentDialog = null;
+		GameManager.Instance.Messenger.SendMessage(this, "DialogBoxClosed");
     }
+
+	void RefreshDialog() {
+		m_dialogLabel.text = m_currentDialog.message;
+	}
 
     void OpenWindow()
     {
@@ -71,4 +92,63 @@ public class SimpleDialogBox : DialogBox
             m_isVisible = false;
         }
     }
+
+	DialogItem SplitDialogItem(DialogItem dialog) {
+		List<string> rows = new List<string>();
+		string[] lines = dialog.message.Split(new string[] { "\n" }, StringSplitOptions.None);
+
+		Debug.Log("Message to split: " + dialog.message);	// @DEBUG
+	
+		// Split the string into lines that fit into the dialog-box-compatible
+		for (int i = 0; i < lines.Length; ++i) {
+			string newLine = "";
+
+			// Split long lines into multiple rows
+			while (lines[i].Length > textColumns) {
+				// TODO: Break along word boundaries
+				newLine = lines[i].Substring(0, textColumns);
+				rows.Add(newLine);
+
+				lines[i] = lines[i].Substring(textColumns);
+			}
+
+			rows.Add(lines[i]);
+		}
+
+		// Generate new DialogItems from the new rows.
+		DialogItem dialogStart = null;
+		DialogItem currentItem = null;
+		string newMessage = "";
+
+		Debug.Log("Generated rows: " + rows.Count);	// @DEBUG
+
+		for (int i = 0; i < rows.Count; ++i) {
+			newMessage += rows[i] + "\n";
+			if (i % textRows == textRows - 1 || i + 1 == rows.Count) {
+				DialogItem newItem = new DialogItem(newMessage);
+				if (null == currentItem) {
+					currentItem = newItem;
+					dialogStart = newItem;
+				}
+				else {
+					currentItem.nextDialog = newItem;
+					currentItem = newItem;
+				}
+
+				newMessage = "";	
+			}
+		}
+
+		// If the original message had a next-dialog set, preserve it.
+		currentItem.nextDialog = dialog.nextDialog;
+
+		// @DEBUG
+		currentItem = dialogStart;
+		while(currentItem != null) {
+			Debug.Log(currentItem.message);
+			currentItem = currentItem.nextDialog;
+		}
+
+		return dialogStart;
+	}
 }

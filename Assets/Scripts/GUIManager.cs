@@ -5,13 +5,16 @@ public class GUIManager : MonoBehaviour {
     public Canvas mainCanvas;
     public DialogBox dialogBoxPrefab;
 
-    public DialogBox GameDialogBox;
+	DialogBox m_gameDialogBox;
+	public DialogBox GameDialogBox {
+		get { return m_gameDialogBox; }
+	}
 
     void Awake()
     {
         Assert.IsNotNull(mainCanvas, "GUIManager: The main canvas isn't set");
         Assert.IsNotNull(dialogBoxPrefab, "GUIManager: The dialog-box prefab isn't set");
-        GameDialogBox = Instantiate<DialogBox>(dialogBoxPrefab);
-        GameDialogBox.transform.SetParent(mainCanvas.transform, false);
+		m_gameDialogBox = Instantiate<DialogBox>(dialogBoxPrefab);
+		m_gameDialogBox.transform.SetParent(mainCanvas.transform, false);
     }
 }
