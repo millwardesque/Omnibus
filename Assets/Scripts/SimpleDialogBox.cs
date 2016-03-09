@@ -29,8 +29,7 @@ public class SimpleDialogBox : DialogBox
 				m_nextDialogImage = images[i];
 			}
 		}
-
-		Debug.Log(m_nextDialogImage.name);
+			
     }
 
     public override void ShowDialog(DialogItem dialog)
@@ -96,8 +95,6 @@ public class SimpleDialogBox : DialogBox
 	DialogItem SplitDialogItem(DialogItem dialog) {
 		List<string> rows = new List<string>();
 		string[] lines = dialog.message.Split(new string[] { "\n" }, StringSplitOptions.None);
-
-		Debug.Log("Message to split: " + dialog.message);	// @DEBUG
 	
 		// Split the string into lines that fit into the dialog-box-compatible
 		for (int i = 0; i < lines.Length; ++i) {
@@ -120,8 +117,6 @@ public class SimpleDialogBox : DialogBox
 		DialogItem currentItem = null;
 		string newMessage = "";
 
-		Debug.Log("Generated rows: " + rows.Count);	// @DEBUG
-
 		for (int i = 0; i < rows.Count; ++i) {
 			newMessage += rows[i] + "\n";
 			if (i % textRows == textRows - 1 || i + 1 == rows.Count) {
@@ -141,14 +136,6 @@ public class SimpleDialogBox : DialogBox
 
 		// If the original message had a next-dialog set, preserve it.
 		currentItem.nextDialog = dialog.nextDialog;
-
-		// @DEBUG
-		currentItem = dialogStart;
-		while(currentItem != null) {
-			Debug.Log(currentItem.message);
-			currentItem = currentItem.nextDialog;
-		}
-
 		return dialogStart;
 	}
 }

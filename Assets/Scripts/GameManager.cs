@@ -16,6 +16,11 @@ public class GameManager : MonoBehaviour {
         get { return m_guiManager;  }
     }
 
+	DialogManager m_dialogManager;
+	public DialogManager Dialog {
+		get { return m_dialogManager; }
+	}
+
 	MessageManager m_messageManager;
 	public MessageManager Messenger {
 		get { return m_messageManager; }
@@ -37,6 +42,8 @@ public class GameManager : MonoBehaviour {
 
 			m_guiManager = GetComponent<GUIManager>();
 			Assert.IsNotNull(m_guiManager, "GameManager: No GUI Manager exists on the Game Manager.");
+
+			m_dialogManager = new DialogManager();
         }
         else
         {
@@ -44,10 +51,16 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+	void Start() {
+		m_dialogManager.ParseDialogScript("test-script");
+		Debug.Log(m_dialogManager.Conversations["test_conversation"]);
+	}
+
 	// Update is called once per frame
 	void Update () {
 		if (!hasShownDialog)
 		{
+			
 			TestShowDialogBox();
 		}
     }
