@@ -10,7 +10,6 @@ public class SimpleDialogBox : DialogBox
     Image m_nextDialogImage;
 
     DialogItem m_currentDialog = null;
-    bool m_isVisible = false;
 
 	public int textColumns;
 	public int textRows;
@@ -72,24 +71,16 @@ public class SimpleDialogBox : DialogBox
 
     void OpenWindow()
     {
-        if (!m_isVisible)
-        {
-            m_myPanel.enabled = true;
-            m_dialogLabel.enabled = true;
-            m_nextDialogImage.enabled = true;
-            m_isVisible = true;
-        }
+        m_myPanel.enabled = true;
+        m_dialogLabel.enabled = true;
+        m_nextDialogImage.enabled = true;
     }
 
     void CloseWindow()
     {
-        if (m_isVisible)
-        {
-            m_myPanel.enabled = false;
-            m_dialogLabel.enabled = false;
-            m_nextDialogImage.enabled = false;
-            m_isVisible = false;
-        }
+        m_myPanel.enabled = false;
+        m_dialogLabel.enabled = false;
+        m_nextDialogImage.enabled = false;
     }
 
 	DialogItem SplitDialogItem(DialogItem dialog) {

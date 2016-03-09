@@ -13,6 +13,10 @@ public class DialogItem
         this.message = message;
         this.nextDialog = nextDialog;
     }
+
+	public override string ToString() {
+		return this.message;
+	}
 }
 
 /// <summary>

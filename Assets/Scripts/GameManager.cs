@@ -52,7 +52,7 @@ public class GameManager : MonoBehaviour {
     }
 
 	void Start() {
-		m_dialogManager.ParseDialogScript("test-script");
+		m_dialogManager.LoadDialogScript("test-script");
 		Debug.Log(m_dialogManager.Conversations["test_conversation"]);
 	}
 
@@ -60,17 +60,8 @@ public class GameManager : MonoBehaviour {
 	void Update () {
 		if (!hasShownDialog)
 		{
-			
-			TestShowDialogBox();
+			m_dialogManager.RunDialogScript("test_conversation");
+			hasShownDialog = true;
 		}
     }
-
-	public void TestShowDialogBox() {
-		DialogItem item1 = new DialogItem("This one is really long and should be broken up into multiple blah blah blah blah blah blah blah blah blah blah dance dance dance blah blah blah blah blah blah blah blah blah blah test test am I done yet? This one is really long and should be broken up into multiple blah blah blah blah blah blah blah blah blah blah dance dance dance blah blah blah blah blah blah blah blah blah blah test test am I done yet?  This one is really long and should be broken up into multiple blah blah blah blah blah blah blah blah blah blah dance dance dance  blah blah blah blah blah blah blah blah blah blah test test am I done yet?");
-		DialogItem item2 = new DialogItem("This is a follow-up test on\nthree\nlines!");
-		item1.nextDialog = item2;
-
-		m_guiManager.GameDialogBox.ShowDialog(item1);
-		hasShownDialog = true;
-	}
 }

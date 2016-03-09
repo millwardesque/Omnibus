@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 public class ConversationLine {
 	string m_actor;
@@ -65,13 +64,6 @@ public class Conversation {
 }
 
 public class DialogManager {
-	static Regex commentRegex = new Regex(@"^#"); // # This is a comment
-	static Regex conversationRegex = new Regex(@"^:([a-zA-Z0-9_]+)"); // :conversation_id
-	static Regex varRegex = new Regex(@"^\!([a-zA-Z0-9_]+)\s*([\+\-\*\\]?=)\s*(.+)");	// var = value, var += 20
-	static Regex newDialogRegex = new Regex(@"^([a-zA-Z0-9_]+):\s*(.*)");
-	static Regex extraDialogRegex = new Regex(@"^\s\s(.+)");
-	static Regex endConversationRegex = new Regex(@"^\s*(\n|$)");
-
 	Dictionary<string, Conversation> m_conversations;
 	public Dictionary<string, Conversation> Conversations {
 		get { return m_conversations; }
@@ -80,92 +72,12 @@ public class DialogManager {
 	public DialogManager() {
 		m_conversations = new Dictionary<string, Conversation>();
 	}
+		
+	public void LoadDialogScript(string scriptResourceName) {
+		TextAsset scriptAsset = Resources.Load<TextAsset>(scriptResourceName);
+		Assert.IsNotNull(scriptAsset, string.Format("DialogManager: Script asset '{0}' couldn't be loaded", scriptResourceName));
 
-	public void ParseDialogScript(string resourceName) {
-		TextAsset scriptAsset = Resources.Load<TextAsset>(resourceName);
-		Assert.IsNotNull(scriptAsset, string.Format("DialogManager: Script asset '{0}' couldn't be loaded", resourceName));
-
-		string script = scriptAsset.text;
-		string[] lines = script.Split(new string[] { "\n" }, StringSplitOptions.None);
-
-		Match match;
-		Conversation conversation = null;
-		ConversationLine conversationLine = null;
-		for (int i = 0; i < lines.Length; ++i) {
-			string line = lines[i];
-
-			match = DialogManager.commentRegex.Match(line);
-			if (match.Success) {
-				continue;
-			}
-
-			match = DialogManager.conversationRegex.Match(line);
-			if (match.Success) {
-				if (conversation != null) {
-					Debug.LogWarning(string.Format("Parsing dialog script {0}: Line at {1} starts a new conversation, but the old one wasn't closed.", resourceName, i));
-					continue;
-				}
-				Debug.Log(string.Format("Starting Conversation {0}", match.Groups[1]));
-				conversation = new Conversation(match.Groups[1].ToString());
-				continue;
-			}
-
-			match = DialogManager.varRegex.Match(line);
-			if (match.Success) {
-				Debug.Log(string.Format("@TODO Var: {0} {1} {2}", match.Groups[1], match.Groups[2], match.Groups[3]));
-				continue;
-			}
-
-			match = DialogManager.newDialogRegex.Match(line);
-			if (match.Success) {
-				// Close the existing conversation line
-				if (conversationLine != null) {
-					Debug.Log(string.Format("Closing conversation line."));
-					conversation.AddLine(conversationLine);
-				}
-
-				// Start the new conversation line
-				conversationLine = new ConversationLine(match.Groups[1].ToString(), match.Groups[2].ToString());
-				Debug.Log(string.Format("Starting new line: {0}: {1}", match.Groups[1], match.Groups[2]));
-				continue;
-			}
-
-			match = DialogManager.extraDialogRegex.Match(line);
-			if (match.Success) {
-				if (conversationLine == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script {0}: Line at {1} adds to conversation line, but there isn't an active line.", resourceName, i));
-					continue;
-				}
-
-				// Append the line.
-				conversationLine.Line += "\n" + match.Groups[1].ToString();
-				Debug.Log(string.Format("Continued Dialog: {0}", match.Groups[1]));
-				continue;
-			}
-
-			match = DialogManager.endConversationRegex.Match(line);
-			if (match.Success) {
-				if (conversationLine == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script {0}: Line at {1} ends conversation, but there isn't an active conversation.", resourceName, i));
-					continue;
-				}
-
-				// Close the final conversation line if one is still open
-				if (line != null) {
-					conversation.AddLine(conversationLine);
-					conversationLine = null;
-					Debug.Log(string.Format("Closing conversation line."));
-				}
-
-				m_conversations.Add(conversation.ID, conversation);
-				conversation = null;
-
-				Debug.Log(string.Format("Ending Conversation"));
-				continue;
-			}
-		}
-
-		Debug.Log(ToString());
+		m_conversations = DialogScriptParser.ParseDialogScript(scriptAsset.text);
 	}
 	
 	public override string ToString () {
@@ -176,5 +88,26 @@ public class DialogManager {
 		}
 
 		return output;
+	}
+
+	public void RunDialogScript(string scriptName) {
+		Assert.IsTrue(m_conversations.ContainsKey(scriptName), string.Format("DialogManager: Unable to run script {0}: No script with that name found.", scriptName));
+
+		Conversation conversation = m_conversations[scriptName];
+		DialogItem head = null;
+		DialogItem item = null;
+		for (int i = 0; i < conversation.Lines.Count; ++i) {
+			DialogItem newItem = new DialogItem(conversation.Lines[i].Actor + ": " + conversation.Lines[i].Line);
+			if (item == null) {
+				head = newItem;
+				item = newItem;
+			}
+			else {
+				item.nextDialog = newItem;
+				item = newItem;
+			}
+		}
+
+		GameManager.Instance.GUI.GameDialogBox.ShowDialog(head);
 	}
 }
