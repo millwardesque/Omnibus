@@ -60,7 +60,7 @@ public class GameManager : MonoBehaviour {
 		if (!hasShownDialog)
 		{
 			hasShownDialog = true;
-			m_dialogManager.RunDialogScript("main");
+			m_dialogManager.RunDialogScript("intro");
 		}
     }
 }

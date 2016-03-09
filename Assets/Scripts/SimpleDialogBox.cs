@@ -10,6 +10,7 @@ public class SimpleDialogBox : DialogBox
     Image m_nextDialogImage;
 
     DialogItem m_currentDialog = null;
+	AfterFullDialogShown m_afterShown = null;
 
 	public int textColumns;
 	public int textRows;
@@ -31,12 +32,13 @@ public class SimpleDialogBox : DialogBox
 			
     }
 
-    public override void ShowDialog(DialogItem dialog)
+	public override void ShowDialog(DialogItem dialog, AfterFullDialogShown afterShown = null)
     {
 		UnityEngine.Assertions.Assert.IsNotNull(dialog, "SimpleDialogBox: ShowDialog parameter 'dialog' is null");
 
 		OpenWindow();
 
+		m_afterShown = afterShown;
 		m_currentDialog = SplitDialogItem(dialog);
 		RefreshDialog();
 		GameManager.Instance.Messenger.SendMessage(this, "DialogBoxOpened");
@@ -54,7 +56,20 @@ public class SimpleDialogBox : DialogBox
         }
         else
         {
-            CloseDialog();
+			if (null != m_afterShown) {
+				m_afterShown(m_currentDialog);
+
+				if (null != m_currentDialog.nextDialog) {
+					m_currentDialog = m_currentDialog.nextDialog;
+					RefreshDialog();
+				}
+				else {
+					CloseDialog();
+				}
+			}
+			else {
+            	CloseDialog();
+			}
         }
     }
 
@@ -81,6 +96,7 @@ public class SimpleDialogBox : DialogBox
         m_myPanel.enabled = false;
         m_dialogLabel.enabled = false;
         m_nextDialogImage.enabled = false;
+		m_afterShown = null;
     }
 
 	DialogItem SplitDialogItem(DialogItem dialog) {

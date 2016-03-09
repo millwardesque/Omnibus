@@ -5,6 +5,9 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class DialogManager {
+	Conversation m_currentConversation = null;
+	int m_lineIndex = -1;
+
 	Dictionary<string, Conversation> m_conversations;
 	public Dictionary<string, Conversation> Conversations {
 		get { return m_conversations; }
@@ -34,21 +37,40 @@ public class DialogManager {
 	public void RunDialogScript(string scriptName) {
 		Assert.IsTrue(m_conversations.ContainsKey(scriptName), string.Format("DialogManager: Unable to run script {0}: No script with that name found.", scriptName));
 
-		Conversation conversation = m_conversations[scriptName];
-		DialogItem head = null;
-		DialogItem item = null;
-		for (int i = 0; i < conversation.Lines.Count; ++i) {
-			DialogItem newItem = new DialogItem(conversation.Lines[i].Actor + ": " + conversation.Lines[i].Line);
+		m_currentConversation = m_conversations[scriptName];
+		m_lineIndex = -1;
+		GameManager.Instance.GUI.GameDialogBox.ShowDialog(GetNextDialogItem(null), OnAfterFullDialogShown);
+	}
+
+	void OnAfterFullDialogShown(DialogItem item) {
+		if (m_currentConversation == null) {
+			return;
+		}
+
+		GetNextDialogItem(item);
+	}
+
+	DialogItem GetNextDialogItem(DialogItem item) {
+		if (m_lineIndex + 1 < m_currentConversation.Lines.Count) {
+			m_lineIndex++;
+				
+			DialogItem newItem = new DialogItem(m_currentConversation.Lines[m_lineIndex].Actor + ": " + m_currentConversation.Lines[m_lineIndex].Line);
 			if (item == null) {
-				head = newItem;
 				item = newItem;
 			}
 			else {
 				item.nextDialog = newItem;
-				item = newItem;
 			}
 		}
+		else if (m_currentConversation.Choices.Count > 0) {
+			m_currentConversation = null;
+			m_lineIndex = -1;
+		}
+		else {
+			m_currentConversation = null;
+			m_lineIndex = -1;
+		}
 
-		GameManager.Instance.GUI.GameDialogBox.ShowDialog(head);
+		return item;
 	}
 }

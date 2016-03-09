@@ -19,11 +19,13 @@ public class DialogItem
 	}
 }
 
+public delegate void AfterFullDialogShown(DialogItem shownItem);
+
 /// <summary>
 /// Abstract class for dialog boxes
 /// </summary>
 public abstract class DialogBox : MonoBehaviour {
-    public abstract void ShowDialog(DialogItem dialog);
+    public abstract void ShowDialog(DialogItem dialog, AfterFullDialogShown afterShown);
     public abstract void Next();
     public abstract void CloseDialog();
 }
