@@ -1,14 +1,26 @@
-# This is a comment
-:test_conversation
-#!variable1 = new_value
-#!variable2 += 1
-#!variable3 -= 2
-#!variable4 *= 3
-#!variable5 \= 4
-actor: Line1
-  Line2
-  Line3
-  Line4
-  Line5
-actor2: LineA
-actor: Line6
+# Introduction
+:intro
+Toby: CJ...
+  You fell into the pool there
+CJ: Help me out! Help me out!
+Toby: I don't know if I should. What if you pull me in too?
+Sam: Then you'd be wet.
+Toby: Shut up, Sam.
+->main
+
+# Choices
+:main
+CJ: Uhh.. Guys.. What are you going to do here?
+$Help her out of the pool.->help_out
+$Leave her in the pool.->dont_help
+
+# Help her out
+:help_out
+CJ: Thanks, that was really great of you! <Pulls Toby into the pool>
+Toby: ARGH DAMMIT!
+Sam: <laughs>
+
+# Don't help her
+:dont_help
+CJ: You can't just leave me here, it's freezing!!!
+->main

@@ -53,15 +53,14 @@ public class GameManager : MonoBehaviour {
 
 	void Start() {
 		m_dialogManager.LoadDialogScript("test-script");
-		Debug.Log(m_dialogManager.Conversations["test_conversation"]);
 	}
 
 	// Update is called once per frame
 	void Update () {
 		if (!hasShownDialog)
 		{
-			m_dialogManager.RunDialogScript("test_conversation");
 			hasShownDialog = true;
+			m_dialogManager.RunDialogScript("main");
 		}
     }
 }

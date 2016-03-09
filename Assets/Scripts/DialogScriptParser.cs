@@ -11,6 +11,8 @@ public class DialogScriptParser {
 	static Regex newDialogRegex = new Regex(@"^([a-zA-Z0-9_]+):\s*(.*)"); // actor: line_1
 	static Regex extraDialogRegex = new Regex(@"^\s\s(.+)"); //   line_n [Note the two leading spaces.
 	static Regex endConversationRegex = new Regex(@"^\s*(\n|$)"); // Blank line.
+	static Regex gotoConversationRegex = new Regex(@"^->([a-zA-Z0-9_]+)"); // Go-To conversation.
+	static Regex choiceRegex = new Regex(@"^\$(.+)->([a-zA-Z0-9_]+)"); // User choice.
 
 	public static Dictionary<string, Conversation> ParseDialogScript(string script) {
 		string[] lines = script.Split(new string[] { "\n" }, StringSplitOptions.None);
@@ -33,14 +35,14 @@ public class DialogScriptParser {
 					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} starts a new conversation, but the old one wasn't closed.", i));
 					continue;
 				}
-				Debug.Log(string.Format("Starting Conversation {0}", match.Groups[1]));
+				// Debug.Log(string.Format("Starting Conversation {0}", match.Groups[1]));
 				conversation = new Conversation(match.Groups[1].ToString());
 				continue;
 			}
 
 			match = DialogScriptParser.varRegex.Match(line);
 			if (match.Success) {
-				Debug.Log(string.Format("@TODO Var: {0} {1} {2}", match.Groups[1], match.Groups[2], match.Groups[3]));
+				// Debug.Log(string.Format("@TODO Var: {0} {1} {2}", match.Groups[1], match.Groups[2], match.Groups[3]));
 				continue;
 			}
 
@@ -48,13 +50,13 @@ public class DialogScriptParser {
 			if (match.Success) {
 				// Close the existing conversation line
 				if (conversationLine != null) {
-					Debug.Log(string.Format("Closing conversation line."));
+					// Debug.Log(string.Format("Closing conversation line."));
 					conversation.AddLine(conversationLine);
 				}
 
 				// Start the new conversation line
 				conversationLine = new ConversationLine(match.Groups[1].ToString(), match.Groups[2].ToString());
-				Debug.Log(string.Format("Starting new line: {0}: {1}", match.Groups[1], match.Groups[2]));
+				// Debug.Log(string.Format("Starting new line: {0}: {1}", match.Groups[1], match.Groups[2]));
 				continue;
 			}
 
@@ -67,28 +69,52 @@ public class DialogScriptParser {
 
 				// Append the line.
 				conversationLine.Line += "\n" + match.Groups[1].ToString();
-				Debug.Log(string.Format("Continued Dialog: {0}", match.Groups[1]));
+				// Debug.Log(string.Format("Continued Dialog: {0}", match.Groups[1]));
 				continue;
 			}
 
 			match = DialogScriptParser.endConversationRegex.Match(line);
 			if (match.Success) {
-				if (conversationLine == null) {
+				if (conversation == null) {
 					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} ends conversation, but there isn't an active conversation.", i));
 					continue;
 				}
 
 				// Close the final conversation line if one is still open
-				if (line != null) {
+				if (conversationLine != null) {
 					conversation.AddLine(conversationLine);
 					conversationLine = null;
-					Debug.Log(string.Format("Closing conversation line."));
+					// Debug.Log(string.Format("Closing conversation line."));
 				}
 
 				conversations.Add(conversation.ID, conversation);
 				conversation = null;
 
-				Debug.Log(string.Format("Ending Conversation"));
+				// Debug.Log(string.Format("Ending Conversation"));
+				continue;
+			}
+
+			match = DialogScriptParser.gotoConversationRegex.Match(line);
+			if (match.Success) {
+				if (conversation == null) {
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} adds GoTo conversation, but there isn't an active conversation.", i));
+					continue;
+				}
+
+				conversation.OnFinishedConversation = match.Groups[1].ToString();
+				// Debug.Log(string.Format("Go To Conversation: {0}", match.Groups[1]));
+				continue;
+			}
+
+			match = DialogScriptParser.choiceRegex.Match(line);
+			if (match.Success) {
+				if (conversation == null) {
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} adds a choice to the conversation, but there isn't an active conversation.", i));
+					continue;
+				}
+
+				conversation.AddChoice(new ConversationChoice(match.Groups[1].ToString(), match.Groups[2].ToString()));
+				Debug.Log(string.Format("Adding choice: {0} -> {1}", match.Groups[1], match.Groups[2]));
 				continue;
 			}
 		}
