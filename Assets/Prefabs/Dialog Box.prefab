@@ -162,6 +162,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   textColumns: 60
   textRows: 4
+  highlightColourName: white
 --- !u!222 &22245696
 CanvasRenderer:
   m_ObjectHideFlags: 1
@@ -259,6 +260,10 @@ Prefab:
     - target: {fileID: 0}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: highlightColourName
+      value: white
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 0}

@@ -18,6 +18,7 @@ public class SimpleDialogBox : DialogBox
 
 	public int textColumns;
 	public int textRows;
+	public string highlightColourName = "white";
 
     void Awake()
     {
@@ -177,17 +178,16 @@ public class SimpleDialogBox : DialogBox
 			string[] lines = m_dialogLabel.text.Split(new string[] { "\n" }, StringSplitOptions.None);
 			int offset = lines.Length - m_currentDialog.Choices.Count;	// Offset by the number of non-choice lines that appear before the choices.
 			int lineIndex = newChoiceIndex + offset;
-			string highlightColour = "green";
 			string newMessage = "";
 
 			// Process each line and either un-highlight it, or highlight it.
 			for (int i = 0; i < lines.Length; ++i) {
 				string line = "";
 				if (lineIndex == i) {
-					line = "<color=\"" + highlightColour + "\">" + lines[i] + "</color>";
+					line = "<color=\"" + highlightColourName + "\">" + lines[i] + "</color>";
 				}
 				else {
-					line = lines[i].Replace("<color=\"" + highlightColour + "\">", "");
+					line = lines[i].Replace("<color=\"" + highlightColourName + "\">", "");
 					line = line.Replace("</color>", "");
 				}
 				newMessage += line;
