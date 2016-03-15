@@ -64,8 +64,6 @@ public class DialogManager {
 	/// <param name="dialogItem">Dialog item.</param>
 	/// <param name="choiceIndex">Choice index.</param>
 	public void OnDialogChoiceSelected(DialogItem dialogItem, int choiceIndex) {
-		Debug.Log(string.Format("Choices: {0}, Index: {1}, ID: {2}", m_currentConversation.Choices.Count, choiceIndex, m_currentConversation.Choices[choiceIndex]));
-		Debug.Log(this);
 		Assert.IsNotNull(m_currentConversation, string.Format("DialogManager: OnDialogChoiceSelected '{0}': No current conversation is set.", choiceIndex));
 		Assert.IsTrue(m_conversations.ContainsKey(m_currentConversation.Choices[choiceIndex].ConversationID), string.Format("DialogManager: OnDialogChoiceSelected '{0}': No choice with that index was found.", choiceIndex));
 		string conversationID = m_currentConversation.Choices[choiceIndex].ConversationID;
@@ -106,8 +104,6 @@ public class DialogManager {
 	}
 
 	DialogItem GetNextDialogItem(DialogItem item) {
-		Debug.Log(string.Format("Getting next dialog item for {0}", item));
-		Debug.Log(string.Format("Current conversation is {0}", m_currentConversation));
 		if (m_currentConversation.Choices.Count > 0 && (item == null || item.Choices == null)) {
 			List<string> choices = new List<string>();
 			for (int i = 0; i < m_currentConversation.Choices.Count; i++) {

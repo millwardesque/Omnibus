@@ -172,7 +172,34 @@ public class SimpleDialogBox : DialogBox
 	void HighlightChoice(int newChoiceIndex) {
 		if (m_currentDialog.HasChoices() && newChoiceIndex >= 0 && newChoiceIndex < m_currentDialog.Choices.Count) {
 			m_selectedIndex = newChoiceIndex;
-			Debug.Log("Highlighting choice: " + m_selectedIndex);
+
+			// Highlight the selected line.
+			string[] lines = m_dialogLabel.text.Split(new string[] { "\n" }, StringSplitOptions.None);
+			int offset = lines.Length - m_currentDialog.Choices.Count;	// Offset by the number of non-choice lines that appear before the choices.
+			int lineIndex = newChoiceIndex + offset;
+			string highlightColour = "green";
+			string newMessage = "";
+
+			// Process each line and either un-highlight it, or highlight it.
+			for (int i = 0; i < lines.Length; ++i) {
+				string line = "";
+				if (lineIndex == i) {
+					line = "<color=\"" + highlightColour + "\">" + lines[i] + "</color>";
+				}
+				else {
+					line = lines[i].Replace("<color=\"" + highlightColour + "\">", "");
+					line = line.Replace("</color>", "");
+				}
+				newMessage += line;
+
+				// Add a newline if we're not on the last line.
+				if (i + i < lines.Length) {
+					newMessage += "\n";
+				}
+			}
+
+			// Update the dialog box.
+			m_dialogLabel.text = newMessage;
 		}
 	}
 
