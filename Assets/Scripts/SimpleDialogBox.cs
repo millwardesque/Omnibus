@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
+// A simple dialog box contains a 'more dialog' indicator, the message and/or a series of choices
 public class SimpleDialogBox : DialogBox
 {
     Image m_myPanel;
@@ -11,6 +12,9 @@ public class SimpleDialogBox : DialogBox
 
     DialogItem m_currentDialog = null;
 	AfterFullDialogShown m_afterShown = null;
+	DialogChoiceSelected m_choiceSelected = null;
+
+	int m_selectedIndex = -1;
 
 	public int textColumns;
 	public int textRows;
@@ -29,25 +33,40 @@ public class SimpleDialogBox : DialogBox
 				m_nextDialogImage = images[i];
 			}
 		}
-			
     }
 
-	public override void ShowDialog(DialogItem dialog, AfterFullDialogShown afterShown = null)
+	/// <summary>
+	/// Shows a DialogItem.
+	/// Opens the dialog window if it's not already opened.
+	/// </summary>
+	/// <param name="dialog">The DialogItem to show</param>
+	/// <param name="afterShown">Called after the user has advanced past the last line of dialog, but before the dialog box is actually closed. Intended to allow other systems to add subsequent chains of dialog dynamically.</param>
+	public override void ShowDialog(DialogItem dialog, AfterFullDialogShown afterShown = null, DialogChoiceSelected choiceSelected = null)
     {
 		UnityEngine.Assertions.Assert.IsNotNull(dialog, "SimpleDialogBox: ShowDialog parameter 'dialog' is null");
 
 		OpenWindow();
 
 		m_afterShown = afterShown;
-		m_currentDialog = SplitDialogItem(dialog);
+		m_choiceSelected = choiceSelected;
+		m_currentDialog = dialog;
+		m_selectedIndex = -1;
+
 		RefreshDialog();
 		GameManager.Instance.Messenger.SendMessage(this, "DialogBoxOpened");
     }
 
+	/// <summary>
+	/// Called when the user intends to advance the dialog to the next one.
+	/// </summary>
     public override void Next()
     {
+		// You can't go forward if there's no current dialog or the dialog is waiting for a user choice.
 		if (null == m_currentDialog) {
 			return;
+		}
+		else if (m_currentDialog.HasChoices()) {
+			SelectChoice();
 		}
         else if (null != m_currentDialog.nextDialog)
         {
@@ -73,17 +92,61 @@ public class SimpleDialogBox : DialogBox
         }
     }
 
+	/// <summary>
+	/// Closes the window and clears the current dialog.
+	/// </summary>
     public override void CloseDialog()
     {
         CloseWindow();
         m_currentDialog = null;
-		GameManager.Instance.Messenger.SendMessage(this, "DialogBoxClosed");
+		GameManager.Instance.Messenger.SendMessage(this, "DialogChoiceSelected");
     }
 
+	/// <summary>
+	/// Refreshes the dialog-box based on the contents fo the current dialog item.
+	/// </summary>
 	void RefreshDialog() {
 		m_dialogLabel.text = m_currentDialog.message;
+
+		if (m_currentDialog.HasChoices()) {
+			for (int i = 0; i < m_currentDialog.Choices.Count; ++i) {
+				m_dialogLabel.text += "\n " + m_currentDialog.Choices[i];
+			}
+
+			HighlightChoice(0);
+		}
 	}
 
+	/// <summary>
+	/// Moves the choice selector to the previous choice.
+	/// </summary>
+	public override void MoveChoicePrevious() {
+		HighlightChoice(m_selectedIndex - 1);
+	}
+
+	/// <summary>
+	/// Moves the choice selector to the next choice.
+	/// </summary>
+	public override void MoveChoiceNext() {
+		HighlightChoice(m_selectedIndex + 1);
+	}
+
+	/// <summary>
+	/// Selects the current choice.
+	/// </summary>
+	public override void SelectChoice() {
+		if (m_currentDialog.HasChoices() && m_selectedIndex >= 0 && m_selectedIndex < m_currentDialog.Choices.Count) {
+			if (m_choiceSelected != null) {
+				m_choiceSelected(m_currentDialog, m_selectedIndex);
+				m_currentDialog = m_currentDialog.nextDialog;
+				RefreshDialog();
+			}
+		}
+	}
+
+	/// <summary>
+	/// Shows the dialog box UI.
+	/// </summary>
     void OpenWindow()
     {
         m_myPanel.enabled = true;
@@ -91,6 +154,9 @@ public class SimpleDialogBox : DialogBox
         m_nextDialogImage.enabled = true;
     }
 
+	/// <summary>
+	/// Hides the dialog box UI.
+	/// </summary>
     void CloseWindow()
     {
         m_myPanel.enabled = false;
@@ -99,6 +165,22 @@ public class SimpleDialogBox : DialogBox
 		m_afterShown = null;
     }
 
+	/// <summary>
+	/// Highlights the user's choice.
+	/// </summary>
+	/// <param name="newChoiceIndex">New choice index.</param>
+	void HighlightChoice(int newChoiceIndex) {
+		if (m_currentDialog.HasChoices() && newChoiceIndex >= 0 && newChoiceIndex < m_currentDialog.Choices.Count) {
+			m_selectedIndex = newChoiceIndex;
+			Debug.Log("Highlighting choice: " + m_selectedIndex);
+		}
+	}
+
+	/// <summary>
+	/// DISABLED. Splits the dialog item based on length. Not functioning properly with choices right now, so this is unused.
+	/// </summary>
+	/// <returns>The dialog item.</returns>
+	/// <param name="dialog">Dialog.</param>
 	DialogItem SplitDialogItem(DialogItem dialog) {
 		List<string> rows = new List<string>();
 		string[] lines = dialog.message.Split(new string[] { "\n" }, StringSplitOptions.None);

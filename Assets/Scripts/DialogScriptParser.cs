@@ -32,7 +32,7 @@ public class DialogScriptParser {
 			match = DialogScriptParser.conversationRegex.Match(line);
 			if (match.Success) {
 				if (conversation != null) {
-					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} starts a new conversation, but the old one wasn't closed.", i));
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {0} starts a new conversation, but the old one wasn't closed.", i));
 					continue;
 				}
 				// Debug.Log(string.Format("Starting Conversation {0}", match.Groups[1]));
@@ -63,7 +63,7 @@ public class DialogScriptParser {
 			match = DialogScriptParser.extraDialogRegex.Match(line);
 			if (match.Success) {
 				if (conversationLine == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} adds to conversation line, but there isn't an active line.", i));
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {0} adds to conversation line, but there isn't an active line.", i));
 					continue;
 				}
 
@@ -76,19 +76,9 @@ public class DialogScriptParser {
 			match = DialogScriptParser.endConversationRegex.Match(line);
 			if (match.Success) {
 				if (conversation == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} ends conversation, but there isn't an active conversation.", i));
 					continue;
 				}
-
-				// Close the final conversation line if one is still open
-				if (conversationLine != null) {
-					conversation.AddLine(conversationLine);
-					conversationLine = null;
-					// Debug.Log(string.Format("Closing conversation line."));
-				}
-
-				conversations.Add(conversation.ID, conversation);
-				conversation = null;
+				DialogScriptParser.CloseConversation(conversations, ref conversation, ref conversationLine);
 
 				// Debug.Log(string.Format("Ending Conversation"));
 				continue;
@@ -97,11 +87,13 @@ public class DialogScriptParser {
 			match = DialogScriptParser.gotoConversationRegex.Match(line);
 			if (match.Success) {
 				if (conversation == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} adds GoTo conversation, but there isn't an active conversation.", i));
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {0} adds GoTo conversation, but there isn't an active conversation.", i));
 					continue;
 				}
 
 				conversation.OnFinishedConversation = match.Groups[1].ToString();
+
+				DialogScriptParser.CloseConversation(conversations, ref conversation, ref conversationLine);
 				// Debug.Log(string.Format("Go To Conversation: {0}", match.Groups[1]));
 				continue;
 			}
@@ -109,16 +101,32 @@ public class DialogScriptParser {
 			match = DialogScriptParser.choiceRegex.Match(line);
 			if (match.Success) {
 				if (conversation == null) {
-					Debug.LogWarning(string.Format("Parsing dialog script: Line at {1} adds a choice to the conversation, but there isn't an active conversation.", i));
+					Debug.LogWarning(string.Format("Parsing dialog script: Line at {0} adds a choice to the conversation, but there isn't an active conversation.", i));
 					continue;
 				}
 
 				conversation.AddChoice(new ConversationChoice(match.Groups[1].ToString(), match.Groups[2].ToString()));
-				Debug.Log(string.Format("Adding choice: {0} -> {1}", match.Groups[1], match.Groups[2]));
+				// Debug.Log(string.Format("Adding choice: {0} -> {1}", match.Groups[1], match.Groups[2]));
 				continue;
 			}
 		}
 
+		if (conversation != null) {
+			DialogScriptParser.CloseConversation(conversations, ref conversation, ref conversationLine);
+		}
+
 		return conversations;
+	}
+
+	static void CloseConversation(Dictionary<string, Conversation> conversations, ref Conversation conversation, ref ConversationLine conversationLine) {
+		// Close the final conversation line if one is still open
+		if (conversationLine != null) {
+			conversation.AddLine(conversationLine);
+			conversationLine = null;
+			// Debug.Log(string.Format("Closing conversation line."));
+		}
+
+		conversations.Add(conversation.ID, conversation);
+		conversation = null;
 	}
 }

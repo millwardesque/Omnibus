@@ -3,6 +3,9 @@ using UnityEngine.Assertions;
 using Rewired;
 
 public class GameManager : MonoBehaviour {
+	public string startScriptResource = "test-script";
+	public string startScript = "intro";
+
 	bool hasShownDialog = false;
 
 	InputManager m_inputManager;
@@ -52,7 +55,7 @@ public class GameManager : MonoBehaviour {
     }
 
 	void Start() {
-		m_dialogManager.LoadDialogScript("test-script");
+		m_dialogManager.LoadDialogScript(startScriptResource);
 	}
 
 	// Update is called once per frame
@@ -60,7 +63,7 @@ public class GameManager : MonoBehaviour {
 		if (!hasShownDialog)
 		{
 			hasShownDialog = true;
-			m_dialogManager.RunDialogScript("intro");
+			m_dialogManager.RunDialogScript(startScript);
 		}
     }
 }

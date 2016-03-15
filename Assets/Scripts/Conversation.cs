@@ -1,6 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// Holds a 'line' of dialogue spoken by an actor in the conversation.
+/// Can consist of more than one on-screen line, but it's spoken all at once by an actor.
+/// </summary>
 public class ConversationLine {
 	string m_actor;
 	public string Actor {
@@ -26,6 +30,10 @@ public class ConversationLine {
 	}
 }
 
+/// <summary>
+/// Holds a conversation choice that an actor can select. 
+/// Intended for use by the player, though there's no reason an AI couldn't use these too.
+/// </summary>
 public class ConversationChoice {
 	string m_label = "";
 	public string Label {
@@ -48,6 +56,10 @@ public class ConversationChoice {
 	}
 }
 
+/// <summary>
+/// A conversation consists of an ID, a mix of lines of dialogue and dialog choices
+/// as well as an optional ID  of the next conversation to visit after this one is done.
+/// </summary>
 public class Conversation {
 	string m_id;
 	public string ID {
