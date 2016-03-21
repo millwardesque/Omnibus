@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class DialogManager {
 	Conversation m_currentConversation = null;
 	int m_lineIndex = -1;
+    string m_loadedScriptResource = "";
 
 	/// <summary>
 	/// All the conversations in the loaded script, keyed by conversation ID.
@@ -31,6 +32,7 @@ public class DialogManager {
 		TextAsset scriptAsset = Resources.Load<TextAsset>(scriptResourceName);
 		Assert.IsNotNull(scriptAsset, string.Format("DialogManager: Script asset '{0}' couldn't be loaded", scriptResourceName));
 
+        m_loadedScriptResource = scriptResourceName;
 		m_conversations = DialogScriptParser.ParseDialogScript(scriptAsset.text);
 	}
 
@@ -41,7 +43,12 @@ public class DialogManager {
 	public override string ToString () {
 		string output = "";
 
-		foreach(KeyValuePair<string, Conversation> entry in m_conversations) {
+        if (m_loadedScriptResource != "")
+        {
+            output += m_loadedScriptResource + "\n";
+        }
+
+        foreach (KeyValuePair<string, Conversation> entry in m_conversations) {
 			output += entry.Value.ToString();
 			output += "\n";
 		}
@@ -75,7 +82,7 @@ public class DialogManager {
 	/// <summary>
 	/// Selects the dialog script that is actively running
 	/// </summary>
-	/// <param name="conversationID">Conversation I.</param>
+	/// <param name="conversationID">Conversation ID.</param>
 	void SelectDialogScript(string conversationID) {
 		Assert.IsTrue(m_conversations.ContainsKey(conversationID), string.Format("DialogManager: Unable to run script {0}: No script with that name found.", conversationID));
 
@@ -87,9 +94,11 @@ public class DialogManager {
 	/// Resets the selected dialog script to nothing.
 	/// </summary>
 	void DeselectDialogScript() {
-		m_currentConversation = null;
+        GameManager.Instance.Messenger.SendMessage(GameManager.Instance, "DialogScriptFinished", m_loadedScriptResource);
+        m_currentConversation = null;
 		m_lineIndex = -1;
-	}
+        m_loadedScriptResource = "";
+    }
 
 	/// <summary>
 	/// Callback for once a full dialog script has been shown
