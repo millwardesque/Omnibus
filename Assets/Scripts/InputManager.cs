@@ -6,6 +6,9 @@ public class InputManager : MonoBehaviour {
 	void Start () {
 		GameManager.Instance.Messenger.AddListener("DialogBoxOpened", OnDialogBoxOpen);
 		GameManager.Instance.Messenger.AddListener("DialogBoxClosed", OnDialogBoxClose);
+
+		GameManager.Instance.Messenger.AddListener("PlayerIsFlying", OnPlayerIsFlying);
+		GameManager.Instance.Messenger.AddListener("PlayerIsGrounded", OnPlayerIsGrounded);
 	}
 
 	void Update() {
@@ -37,5 +40,17 @@ public class InputManager : MonoBehaviour {
 	void OnDialogBoxClose(Message message) {
 		if(!ReInput.isReady) return;
 		ReInput.players.Players[0].controllers.maps.SetMapsEnabled(false, "In Dialog");
+	}
+
+	void OnPlayerIsFlying(Message message) {
+		if(!ReInput.isReady) return;
+		ReInput.players.Players[0].controllers.maps.SetMapsEnabled(false, "Grounded");
+		ReInput.players.Players[0].controllers.maps.SetMapsEnabled(true, "Flying");
+	}
+
+	void OnPlayerIsGrounded(Message message) {
+		if(!ReInput.isReady) return;
+		ReInput.players.Players[0].controllers.maps.SetMapsEnabled(true, "Grounded");
+		ReInput.players.Players[0].controllers.maps.SetMapsEnabled(false, "Flying");
 	}
 }

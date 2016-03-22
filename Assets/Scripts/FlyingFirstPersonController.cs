@@ -1,9 +1,15 @@
 using System;
 using UnityEngine;
+using Rewired;
 using UnityStandardAssets.CrossPlatformInput;
 using UnityStandardAssets.Utility;
 using UnityStandardAssets.Characters.FirstPerson;
 using Random = UnityEngine.Random;
+
+public enum ActorMovementState { 
+	Grounded,
+	Flying
+}
 
 [RequireComponent(typeof (CharacterController))]
 [RequireComponent(typeof (AudioSource))]
@@ -27,6 +33,28 @@ public class FlyingFirstPersonController : MonoBehaviour
     [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
     [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
 
+	private ActorMovementState m_movementState;
+	private ActorMovementState MovementState {
+		get { return m_movementState; }
+		set {
+			if (m_movementState != value) {
+				if (value == ActorMovementState.Flying) {
+					m_GravityMultiplier = 0f;
+					PlayJumpSound();
+					GameManager.Instance.Messenger.SendMessage(this, "PlayerIsFlying");
+					GameManager.Instance.Messenger.SendMessage(this, "PlayerIsFlying");
+				}
+				else if (value == ActorMovementState.Grounded) {
+					m_GravityMultiplier = 2f;
+					StartCoroutine(m_JumpBob.DoBobCycle());
+					PlayLandingSound();
+					m_MoveDir.y = 0f;
+					GameManager.Instance.Messenger.SendMessage(this, "PlayerIsGrounded");
+				}
+			}
+		}
+	}
+
     private Camera m_Camera;
     private bool m_Jump;
     private float m_YRotation;
@@ -38,7 +66,6 @@ public class FlyingFirstPersonController : MonoBehaviour
     private Vector3 m_OriginalCameraPosition;
     private float m_StepCycle;
     private float m_NextStep;
-    private bool m_Jumping;
     private AudioSource m_AudioSource;
 
     // Use this for initialization
@@ -51,34 +78,25 @@ public class FlyingFirstPersonController : MonoBehaviour
         m_HeadBob.Setup(m_Camera, m_StepInterval);
         m_StepCycle = 0f;
         m_NextStep = m_StepCycle/2f;
-        m_Jumping = false;
         m_AudioSource = GetComponent<AudioSource>();
 		m_MouseLook.Init(transform , m_Camera.transform);
     }
-
-
+		
     // Update is called once per frame
     private void Update()
     {
+		// Rotate the camera
         RotateView();
-        m_Jump = CrossPlatformInputManager.GetButton("Jump");
-        if (!m_Jump)
+
+        // Actor has just become grounded
+		if (!m_PreviouslyGrounded && m_CharacterController.isGrounded)
         {
-            m_GravityMultiplier = 2f;
-        }
-        else
-        {
-            m_GravityMultiplier = 0f;
+			MovementState = ActorMovementState.Grounded;
         }
 
-        if (!m_PreviouslyGrounded && m_CharacterController.isGrounded)
-        {
-            StartCoroutine(m_JumpBob.DoBobCycle());
-            PlayLandingSound();
-            m_MoveDir.y = 0f;
-            m_Jumping = false;
-        }
-        if (!m_CharacterController.isGrounded && !m_Jumping && m_PreviouslyGrounded)
+		// We've fallen off a ledge in this case.
+		// I think :/
+		if (!m_CharacterController.isGrounded && MovementState != ActorMovementState.Flying && m_PreviouslyGrounded)
         {
             m_MoveDir.y = 0f;
         }
@@ -86,19 +104,11 @@ public class FlyingFirstPersonController : MonoBehaviour
         m_PreviouslyGrounded = m_CharacterController.isGrounded;
     }
 
-
-    private void PlayLandingSound()
-    {
-        m_AudioSource.clip = m_LandSound;
-        m_AudioSource.Play();
-        m_NextStep = m_StepCycle + .5f;
-    }
-
-
     private void FixedUpdate()
     {
         float speed;
         GetInput(out speed);
+
         // always move along the camera forward as it is the direction that it being aimed at
         Vector3 desiredMove = transform.forward*m_Input.y + transform.right*m_Input.x;
 
@@ -114,15 +124,11 @@ public class FlyingFirstPersonController : MonoBehaviour
         // CPM:
         if (m_Jump)
         {
+			MovementState = ActorMovementState.Flying;
             m_MoveDir.y = m_JumpSpeed;
-
-            if (!m_Jumping)
-            {
-                PlayJumpSound();
-                m_Jumping = true;
-            }
         }
-        else if (m_CharacterController.isGrounded)
+
+        if (m_CharacterController.isGrounded)
         {
             m_MoveDir.y = -m_StickToGroundForce;
         }
@@ -137,50 +143,6 @@ public class FlyingFirstPersonController : MonoBehaviour
 
         m_MouseLook.UpdateCursorLock();
     }
-
-
-    private void PlayJumpSound()
-    {
-        m_AudioSource.clip = m_JumpSound;
-        m_AudioSource.Play();
-    }
-
-
-    private void ProgressStepCycle(float speed)
-    {
-        if (m_CharacterController.velocity.sqrMagnitude > 0 && (m_Input.x != 0 || m_Input.y != 0))
-        {
-            m_StepCycle += (m_CharacterController.velocity.magnitude + (speed*(m_IsWalking ? 1f : m_RunstepLenghten)))*
-                            Time.fixedDeltaTime;
-        }
-
-        if (!(m_StepCycle > m_NextStep))
-        {
-            return;
-        }
-
-        m_NextStep = m_StepCycle + m_StepInterval;
-
-        PlayFootStepAudio();
-    }
-
-
-    private void PlayFootStepAudio()
-    {
-        if (!m_CharacterController.isGrounded)
-        {
-            return;
-        }
-        // pick & play a random footstep sound from the array,
-        // excluding sound at index 0
-        int n = Random.Range(1, m_FootstepSounds.Length);
-        m_AudioSource.clip = m_FootstepSounds[n];
-        m_AudioSource.PlayOneShot(m_AudioSource.clip);
-        // move picked sound to index 0 so it's not picked next time
-        m_FootstepSounds[n] = m_FootstepSounds[0];
-        m_FootstepSounds[0] = m_AudioSource.clip;
-    }
-
 
     private void UpdateCameraPosition(float speed)
     {
@@ -207,43 +169,80 @@ public class FlyingFirstPersonController : MonoBehaviour
 
 
     private void GetInput(out float speed)
-    {
-        // Read input
-        float horizontal = CrossPlatformInputManager.GetAxis("Horizontal");
-        float vertical = CrossPlatformInputManager.GetAxis("Vertical");
+	{
+		if (MovementState == ActorMovementState.Grounded) {
+	        // Read input
+			float horizontal =  ReInput.players.Players[0].GetAxis("Strafe");
+			float vertical = ReInput.players.Players[0].GetAxis("Move forward");
+			m_Jump = ReInput.players.Players[0].GetButtonDown("Jump");
+	        bool waswalking = m_IsWalking;
 
-        bool waswalking = m_IsWalking;
+	#if !MOBILE_INPUT
+	        // On standalone builds, walk/run speed is modified by a key press.
+	        // keep track of whether or not the character is walking or running
+			m_IsWalking = !ReInput.players.Players[0].GetButton("Run");
+	#endif
+	        // set the desired speed to be walking or running
+	        speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
+	        m_Input = new Vector2(horizontal, vertical);
 
-#if !MOBILE_INPUT
-        // On standalone builds, walk/run speed is modified by a key press.
-        // keep track of whether or not the character is walking or running
-        m_IsWalking = !Input.GetKey(KeyCode.LeftShift);
-#endif
-        // set the desired speed to be walking or running
-        speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
-        m_Input = new Vector2(horizontal, vertical);
+	        // normalize input if it exceeds 1 in combined length:
+	        if (m_Input.sqrMagnitude > 1)
+	        {
+	            m_Input.Normalize();
+	        }
 
-        // normalize input if it exceeds 1 in combined length:
-        if (m_Input.sqrMagnitude > 1)
-        {
-            m_Input.Normalize();
-        }
+	        // handle speed change to give an fov kick
+	        // only if the player is going to a run, is running and the fovkick is to be used
+	        if (m_IsWalking != waswalking && m_UseFovKick && m_CharacterController.velocity.sqrMagnitude > 0)
+	        {
+	            StopAllCoroutines();
+	            StartCoroutine(!m_IsWalking ? m_FovKick.FOVKickUp() : m_FovKick.FOVKickDown());
+	        }
+		}
+		else if (MovementState == ActorMovementState.Flying) {
+			// Read input
+			float horizontal =  ReInput.players.Players[0].GetAxis("Yaw");
+			float vertical = ReInput.players.Players[0].GetAxis("Thrust");
 
-        // handle speed change to give an fov kick
-        // only if the player is going to a run, is running and the fovkick is to be used
-        if (m_IsWalking != waswalking && m_UseFovKick && m_CharacterController.velocity.sqrMagnitude > 0)
-        {
-            StopAllCoroutines();
-            StartCoroutine(!m_IsWalking ? m_FovKick.FOVKickUp() : m_FovKick.FOVKickDown());
-        }
+			bool waswalking = m_IsWalking;
+
+			#if !MOBILE_INPUT
+			// On standalone builds, walk/run speed is modified by a key press.
+			// keep track of whether or not the character is walking or running
+			m_IsWalking = !ReInput.players.Players[0].GetButton("Run");
+			#endif
+			// set the desired speed to be walking or running
+			speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
+			m_Input = new Vector2(horizontal, vertical);
+
+			// normalize input if it exceeds 1 in combined length:
+			if (m_Input.sqrMagnitude > 1)
+			{
+				m_Input.Normalize();
+			}
+
+			// handle speed change to give an fov kick
+			// only if the player is going to a run, is running and the fovkick is to be used
+			if (m_IsWalking != waswalking && m_UseFovKick && m_CharacterController.velocity.sqrMagnitude > 0)
+			{
+				StopAllCoroutines();
+				StartCoroutine(!m_IsWalking ? m_FovKick.FOVKickUp() : m_FovKick.FOVKickDown());
+			}
+		}
+		else {
+			speed = 0;
+		}
     }
 
-
+	/// <summary>
+	/// Rotates the view based on Mouselook.
+	/// @TODO Replace with Rewired.
+	/// </summary>
     private void RotateView()
     {
         m_MouseLook.LookRotation (transform, m_Camera.transform);
     }
-
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
@@ -258,6 +257,70 @@ public class FlyingFirstPersonController : MonoBehaviour
         {
             return;
         }
+
+		// Bounce the actor off the object slightly.
         body.AddForceAtPosition(m_CharacterController.velocity*0.1f, hit.point, ForceMode.Impulse);
     }
+
+	/// <summary>
+	/// Controls how often footsteps hit the ground (e.g. for controlling footstep sounds).
+	/// </summary>
+	/// <param name="speed">Speed.</param>
+	private void ProgressStepCycle(float speed)
+	{
+		if (m_CharacterController.velocity.sqrMagnitude > 0 && (m_Input.x != 0 || m_Input.y != 0))
+		{
+			m_StepCycle += (m_CharacterController.velocity.magnitude + (speed*(m_IsWalking ? 1f : m_RunstepLenghten)))*
+				Time.fixedDeltaTime;
+		}
+
+		if (!(m_StepCycle > m_NextStep))
+		{
+			return;
+		}
+
+		m_NextStep = m_StepCycle + m_StepInterval;
+
+		PlayFootStepAudio();
+	}
+
+	/// <summary>
+	/// Plays the landing sound.
+	/// </summary>
+	private void PlayLandingSound()
+	{
+		m_AudioSource.clip = m_LandSound;
+		m_AudioSource.Play();
+		m_NextStep = m_StepCycle + .5f;
+	}
+
+	/// <summary>
+	/// Plays the jump sound.
+	/// </summary>
+	private void PlayJumpSound()
+	{
+		m_AudioSource.clip = m_JumpSound;
+		m_AudioSource.Play();
+	}
+
+	/// <summary>
+	/// Plays the footstep audio.
+	/// </summary>
+	private void PlayFootStepAudio()
+	{
+		if (MovementState != ActorMovementState.Grounded)
+		{
+			return;
+		}
+
+		// pick & play a random footstep sound from the array,
+		// excluding sound at index 0
+		int n = Random.Range(1, m_FootstepSounds.Length);
+		m_AudioSource.clip = m_FootstepSounds[n];
+		m_AudioSource.PlayOneShot(m_AudioSource.clip);
+
+		// move picked sound to index 0 so it's not picked next time
+		m_FootstepSounds[n] = m_FootstepSounds[0];
+		m_FootstepSounds[0] = m_AudioSource.clip;
+	}
 }
