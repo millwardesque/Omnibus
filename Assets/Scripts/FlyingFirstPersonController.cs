@@ -34,6 +34,9 @@ public class FlyingFirstPersonController : MonoBehaviour
     [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
     [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
 
+	[SerializeField] private float m_flySpeed;
+	[SerializeField] private float m_flyBoostSpeed;
+
 	private ActorMovementState m_movementState = ActorMovementState.WaitingToStart;
 	private ActorMovementState MovementState {
 		get { return m_movementState; }
@@ -138,7 +141,7 @@ public class FlyingFirstPersonController : MonoBehaviour
 		desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
 
 		m_MoveDir.x = desiredMove.x * speed;
-		m_MoveDir.y = -m_StickToGroundForce;
+		m_MoveDir.y = m_Jump ? m_JumpSpeed : -m_StickToGroundForce;
 		m_MoveDir.z = desiredMove.z * speed;
 
 		m_CollisionFlags = m_CharacterController.Move(m_MoveDir*Time.fixedDeltaTime);
@@ -163,7 +166,9 @@ public class FlyingFirstPersonController : MonoBehaviour
 		desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
 
 		m_MoveDir.x = desiredMove.x * speed;
+		m_MoveDir.y *= speed;
 		m_MoveDir.z = desiredMove.z * speed;
+		Debug.Log(m_MoveDir);
 		m_MoveDir += Physics.gravity * m_GravityMultiplier * Time.fixedDeltaTime;
 
 		m_CollisionFlags = m_CharacterController.Move(m_MoveDir * Time.fixedDeltaTime);
@@ -212,7 +217,7 @@ public class FlyingFirstPersonController : MonoBehaviour
 	private void GetFlyingInput(out float speed) {
 		float yawAmount =  ReInput.players.Players[0].GetAxis("Yaw");
 		float thrustAmount = ReInput.players.Players[0].GetAxis("Thrust");
-		m_MoveDir.y = m_JumpSpeed * ReInput.players.Players[0].GetAxis("Altitude");
+		m_MoveDir.y = ReInput.players.Players[0].GetAxis("Altitude");
 
 		bool waswalking = m_IsWalking;
 
@@ -222,7 +227,7 @@ public class FlyingFirstPersonController : MonoBehaviour
 		m_IsWalking = !ReInput.players.Players[0].GetButton("Extra Thrust");
 		#endif
 		// set the desired speed to be walking or running
-		speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
+		speed = m_IsWalking ? m_flySpeed : m_flyBoostSpeed;
 		m_Input = new Vector2(yawAmount, thrustAmount);
 
 		// normalize input if it exceeds 1 in combined length:
