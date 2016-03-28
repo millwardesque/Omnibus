@@ -42,15 +42,14 @@ public class FlyingFirstPersonController : MonoBehaviour
 		get { return m_movementState; }
 		set {
 			if (m_movementState != value) {
+                Debug.Log("Player is " + value.ToString());
 				if (value == ActorMovementState.Flying) {
-					Debug.Log("Player is flying");
 					m_GravityMultiplier = 0f;
 					PlayJumpSound();
 					GameManager.Instance.Messenger.SendMessage(this, "PlayerIsFlying");
 					GameManager.Instance.Messenger.SendMessage(this, "PlayerIsFlying");
 				}
 				else if (value == ActorMovementState.Grounded) {
-					Debug.Log("Player is grounded");
 					m_GravityMultiplier = 2f;
 					StartCoroutine(m_JumpBob.DoBobCycle());
 					PlayLandingSound();
@@ -168,7 +167,6 @@ public class FlyingFirstPersonController : MonoBehaviour
 		m_MoveDir.x = desiredMove.x * speed;
 		m_MoveDir.y *= speed;
 		m_MoveDir.z = desiredMove.z * speed;
-		Debug.Log(m_MoveDir);
 		m_MoveDir += Physics.gravity * m_GravityMultiplier * Time.fixedDeltaTime;
 
 		m_CollisionFlags = m_CharacterController.Move(m_MoveDir * Time.fixedDeltaTime);

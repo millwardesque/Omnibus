@@ -3,10 +3,8 @@ using UnityEngine.Assertions;
 using Rewired;
 
 public class GameManager : MonoBehaviour {
-	public string startScriptResource = "test-script";
-	public string startScript = "intro";
-
-	bool hasShownDialog = false;
+    [SerializeField] string m_cityScript = "";
+    [SerializeField] GameObject m_cityContainer = null;
 
 	InputManager m_inputManager;
 	public InputManager Input {
@@ -55,22 +53,13 @@ public class GameManager : MonoBehaviour {
     }
 
 	void Start() {
-        if (startScriptResource != "")
+        if (m_cityScript != "")
         {
-            m_dialogManager.LoadDialogScript(startScriptResource);
+            CityParser.ParseCityFromResource(m_cityScript, (m_cityContainer != null ? m_cityContainer.transform : null));
         }
 	}
 
 	// Update is called once per frame
 	void Update () {
-		if (!hasShownDialog)
-		{
-			hasShownDialog = true;
-
-            if (startScript != "")
-            {
-                m_dialogManager.RunDialogScript(startScript);
-            }
-		}
     }
 }

@@ -1,0 +1,35 @@
+# Test city file format
+
+:building_type_1
+prefab: Building-1-Prototype
+
+# Building placement
+$building
+t: building_type_1
+p: -50 50 33
+s: 40 100 20
+
+$building
+t: building_type_1
+p: -50 50 33
+s: 40 100 20
+
+$building
+t: building_type_1
+p: 87 25 40
+s: 20 50 20
+
+$building
+t: building_type_1
+p: 19 25 67
+s: 20 50 20
+
+$building
+t: building_type_1
+p: 43 60 36
+s: 15 120 15
+
+$building
+t: building_type_1
+p: -50 50 33
+s: 15 30 15
