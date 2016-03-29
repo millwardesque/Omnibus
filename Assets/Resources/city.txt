@@ -4,57 +4,116 @@
 prefab: Building-1-Prototype
 
 # Building placement
+# Row 1
 $building
 t: building_type_1
-p: -50 50 33
-s: 40 100 20
+p: -100 20 -50
+s: 25 40 25
+
+$building
+$building
+t: building_type_1
+p: -150 50 50
+s: 25 100 25
 
 $building
 t: building_type_1
-p: 0 25 33
-s: 20 50 20
+p: -100 30 50
+s: 25 60 25s
 
 $building
 t: building_type_1
-p: 10 33 33
-s: 30 66 33
+p: -50 35 50
+s: 25 70 25
 
 $building
 t: building_type_1
-p: -50 33 0
-s: 40 66 20
+p: 0 50 50
+s: 25 100 25
+
+$building
+t: building_type_1
+p: 50 10 50
+s: 25 20 25
+
+$building
+t: building_type_1
+p: 100 25 50
+s: 25 50 25
+
+$building
+t: building_type_1
+p: 150 32.5 50
+s: 25 65 25
+
+# Row 2
+$building
+t: building_type_1
+p: -150 25 0
+s: 25 50 25
+
+$building
+t: building_type_1
+p: -100 10 0
+s: 25 20 25s
+
+$building
+t: building_type_1
+p: -50 30 0
+s: 25 60 25
 
 $building
 t: building_type_1
 p: 0 50 0
-s: 20 100 20
+s: 25 100 25
 
 $building
 t: building_type_1
-p: 10 25 0
-s: 30 50 33
+p: 50 50 0
+s: 25 100 25
 
 $building
 t: building_type_1
-p: -50 50 33
-s: 40 100 20
+p: 100 40 0
+s: 25 80 25
 
 $building
 t: building_type_1
-p: 87 25 40
-s: 20 50 20
+p: 150 60 0
+s: 25 120 25
+
+# Row 3
+$building
+t: building_type_1
+p: -150 25 -50
+s: 25 50 25
 
 $building
 t: building_type_1
-p: 19 25 67
-s: 20 50 20
+p: -100 25 -50
+s: 25 50 25s
 
 $building
 t: building_type_1
-p: 43 60 36
-s: 15 120 15
+p: -50 10 -50
+s: 25 20 25
 
 $building
 t: building_type_1
-p: -50 50 33
-s: 15 30 15
+p: 0 30 -50
+s: 25 60 25
+
+$building
+t: building_type_1
+p: 50 40 -50
+s: 25 80 25
+
+$building
+t: building_type_1
+p: 100 25 -50
+s: 25 50 25
+
+$building
+t: building_type_1
+p: 150 50 -50
+s: 25 100 25
