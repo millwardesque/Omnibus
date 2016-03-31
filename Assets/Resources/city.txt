@@ -3,7 +3,24 @@
 :building_type_1
 prefab: Building-1-Prototype
 
+:girl_house
+prefab: Girl-House-Prototype
+
+:player_house
+prefab: Player-House-Prototype
+
 # Building placement
+
+$building
+t: girl_house
+p: 60 5 80
+s: 10 10 10
+
+$building
+t: player_house
+p: 0 0 -100
+s: 1 1 1 
+
 # Row 1
 $building
 t: building_type_1
